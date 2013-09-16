@@ -4,14 +4,8 @@ const _ = require('underscore');
 const jwt = require('jwt-simple');
 const async = require('async');
 
-const ENDPOINT = process.env['CSOL_OPENBADGER_URL'];
-const JWT_SECRET = process.env['CSOL_OPENBADGER_SECRET'];
 const TOKEN_LIFETIME = process.env['CSOL_OPENBADGER_TOKEN_LIFETIME'] || 10000;
 
-if (!ENDPOINT)
-  throw new Error('Must specify CSOL_OPENBADGER_URL in the environment');
-if (!JWT_SECRET)
-  throw new Error('Must specify CSOL_OPENBADGER_SECRET in the environment');
 
 function normalizeBadge (badge, id) {
   if (badge.shortname)
@@ -150,14 +144,6 @@ function applyFilter (data, query) {
   })
 }
 
-function getJWTToken(email) {
-  var claims = {
-    prn: email,
-    exp: Date.now() + TOKEN_LIFETIME
-  };
-  return jwt.encode(claims, JWT_SECRET);
-}
-
 function handleAutoAwards(email, learner, autoAwardedBadges) {
   if (autoAwardedBadges && autoAwardedBadges.length > 0) {
     async.map(autoAwardedBadges, function(shortname, cb) {
@@ -172,7 +158,16 @@ function handleAutoAwards(email, learner, autoAwardedBadges) {
   }
 }
 
-var openbadger = new Api(ENDPOINT, {
+var openbadger = {
+  getJWTToken: {
+    func: function(email) {
+      var claims = {
+        prn: email,
+        exp: Date.now() + TOKEN_LIFETIME
+      };
+      return jwt.encode(claims, self.OPENBADGER_SECRET);
+    }.bind(this)
+  },
 
   getBadges: {
     func: function getBadges (query, callback) {
@@ -267,7 +262,7 @@ var openbadger = new Api(ENDPOINT, {
     func: function getUserBadges (query, callback) {
       var email = query.email || query.session.user.email;
       var params = {
-        auth: getJWTToken(email),
+        auth: this.getJWTToken(email),
         email: email
       };
       this.get('/user', { qs: params }, function(err, data) {
@@ -282,7 +277,7 @@ var openbadger = new Api(ENDPOINT, {
           })
         });
       });
-    },
+    }.bind(this),
     paginate: true,
     key: 'badges'
   },
@@ -292,7 +287,7 @@ var openbadger = new Api(ENDPOINT, {
 
     var email = query.email || query.session.user.email;
     var params = {
-      auth: getJWTToken(email),
+      auth: this.getJWTToken(email),
       email: email
     };
 
@@ -304,16 +299,16 @@ var openbadger = new Api(ENDPOINT, {
         badge: normalizeBadgeInstance(data.badge, id)
       });
     });
-  },
+  }.bind(this),
 
   awardBadge: function awardBadge (query, callback) {
     var email = query.learner ? query.learner.email : query.session.user.email;
     var shortname = query.badge;
 
     var params = {
-      auth: getJWTToken(email),
+      auth: this.getJWTToken(email),
       email: email
-    }
+    };
 
     this.post('/user/badge/' + shortname, { form: params }, function(err, data) {
       if (err)
@@ -325,27 +320,27 @@ var openbadger = new Api(ENDPOINT, {
         assertionUrl: data.url
       });
     });
-  },
+  }.bind(this),
 
   getBadgeFromCode: function getBadgeFromCode (query, callback) {
     var email = query.email;
     var code = query.code;
     var params = {
-      auth: getJWTToken(email),
+      auth: this.getJWTToken(email),
       email: email,
       code: code,
     };
     this.get('/unclaimed', { qs: params }, function(err, data) {
       return callback(err, data);
     });
-  },
+  }.bind(this),
 
 
   claim: function claim (query, callback) {
     var email = query.learner ? query.learner.email : null;
     var code = query.code;
     var params = {
-      auth: getJWTToken(email),
+      auth: this.getJWTToken(email),
       email: email,
       code: code,
     };
@@ -357,7 +352,7 @@ var openbadger = new Api(ENDPOINT, {
 
       return callback(null, data);
     });
-  },
+  }.bind(this),
 
   getBadgeRecommendations: function getBadgeRecommendations (query, callback) {
     var badgename = query.badgeName;
@@ -387,7 +382,7 @@ var openbadger = new Api(ENDPOINT, {
     var user = query.session.user;
     var email = user.email;
     var params = {
-      auth: getJWTToken(email),
+      auth: this.getJWTToken(email),
       email: email
     };
     this.get('/user/recommendations', {qs: params}, function(err, data) {
@@ -398,12 +393,17 @@ var openbadger = new Api(ENDPOINT, {
         recommendations: _.map(data.badges, normalizeBadge)
       });
     });
-  }
-});
+  }.bind(this)
+};
 
 updateOrgs();
 
-module.exports = openbadger;
+module.exports = function(config) {
+  openbadger.jwt_secret = config['OPENBADGER_SECRET'];
+  var obr = new API(config['OPENBADGER_URL'], openbadger);
+  return obr;
+};
+
 module.exports.getFilters = function getFilters () {
   return {
     categories: {
