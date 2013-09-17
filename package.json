@@ -1,16 +1,16 @@
 {
   "name": "openbadger-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A client for the OpenBadger API",
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/.bin/tap-prettify test/*.test.js"
   },
   "author": "Mozilla Open Badges http://openbadges.org",
-  "repository" :
-    { "type" : "git"
-      , "url" : "http://github.com/mozilla/openbadger-client.git"
-    },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/mozilla/openbadger-client.git"
+  },
   "license": "MPLv2",
   "dependencies": {
     "tap-prettify": "0.0.2",
