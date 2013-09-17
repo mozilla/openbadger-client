@@ -6,7 +6,11 @@
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/.bin/tap-prettify test/*.test.js"
   },
-  "author": "",
+  "author": "Mozilla Open Badges http://openbadges.org",
+  "repository" :
+    { "type" : "git"
+      , "url" : "http://github.com/mozilla/openbadger-client.git"
+    },
   "license": "MPLv2",
   "dependencies": {
     "tap-prettify": "0.0.2",
