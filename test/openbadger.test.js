@@ -1,16 +1,20 @@
-['CSOL_OPENBADGER_URL',
- 'CSOL_OPENBADGER_SECRET',
- 'CSOL_IREMIX_URL',
- 'CSOL_IREMIX_USER',
- 'CSOL_IREMIX_PASS'].forEach(function(name) {
-  if (!process.env[name])
-    process.env[name] = 'FAKEVALUE';
+var config = {};
+['OPENBADGER_URL',
+ 'OPENBADGER_SECRET'
+].forEach(function(name) {
+  if (!process.env[name]) {
+    config[name] = 'FAKEVALUE';
+  } else {
+    config[name] = process.env[name]
+  }
 });
 
+const util = require('util');
 const path = require('path');
 const test = require('tap').test;
 const sinon = require('sinon');
-var openbadger = require('..');
+console.error("CHRIS CHECK THIS" + util.inspect(config));
+var openbadger = require('..')(config.OPENBADGER_URL, config.OPENBADGER_SECRET);
 var mock = sinon.mock(openbadger);
 
 const DATA = {
