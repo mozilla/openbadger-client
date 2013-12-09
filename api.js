@@ -2,6 +2,7 @@ var request = require('request');
 var errors = require('./errors');
 var _ = require('underscore');
 var url = require('url');
+var util = require('util');
 
 
 var DEFAULT_ERROR = 'There was a problem accessing this data.';
@@ -113,8 +114,8 @@ function remote (method, path, options, callback) {
   var endpointUrl = getFullUrl(this.origin, path);
   request[method](endpointUrl, options, function(err, response, body) {
 
-    console.log('info', 'API request: "%s %s" %s',
-      method.toUpperCase(), endpointUrl, response ? response.statusCode : "Error", err);
+    console.log(util.format('API request: "%s %s" %s',
+      method.toUpperCase(), endpointUrl, response ? response.statusCode : "Error", err));
 
     if (err)
       return callback(new errors.Unknown(err));
